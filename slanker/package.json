@@ -1,0 +1,47 @@
+{
+  "name": "slanker",
+  "version": "1.0.0",
+  "description": "Telegram Mini App for deploying tokens via Clanker SDK",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "setup": "chmod +x setup_clanker.sh && ./setup_clanker.sh",
+    "dev:api": "cd api && uvicorn main:app --reload --port 8000",
+    "dev:bot": "cd bot && python main.py",
+    "dev:webapp": "cd webapp && python -m http.server 8080",
+    "start": "npm run start:api",
+    "start:api": "cd api && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}",
+    "start:bot": "cd bot && python main.py",
+    "install:deps": "cd api && pip install -r requirements.txt && cd ../bot && pip install -r requirements.txt",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linting configured\" && exit 0"
+  },
+  "dependencies": {
+    "clanker-sdk": "^4.1.6",
+    "viem": "^2.7.9"
+  },
+  "keywords": [
+    "telegram",
+    "miniapp",
+    "clanker",
+    "token",
+    "deployment",
+    "base",
+    "ethereum",
+    "web3"
+  ],
+  "author": "Slanker Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/slanker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/slanker/issues"
+  },
+  "homepage": "https://github.com/your-username/slanker#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # API Service
+  slanker-api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=http://localhost:8080,https://web.telegram.org
+      - RATE_LIMIT_PER_MINUTE=5
+      - LOG_LEVEL=INFO
+    env_file:
+      - ../.env
+    volumes:
+      - ../api:/app
+      - ../logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Bot Service
+  slanker-bot:
+    build:
+      context: ../bot
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8001
+      - WEBAPP_URL=http://localhost:8080
+      - LOG_LEVEL=INFO
+    env_file:
+      - ../.env
+    volumes:
+      - ../bot:/app
+      - ../logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # WebApp Service (Nginx for static files)
+  slanker-webapp:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ../webapp:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  logs:
+    driver: local
+
+networks:
+  default:
+    driver: bridge

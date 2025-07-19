@@ -1,0 +1,3 @@
+web: cd api && uvicorn main:app --host 0.0.0.0 --port $PORT
+bot: cd bot && python main.py
+worker: cd api && python -c "print('Worker process ready')"

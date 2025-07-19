@@ -1,0 +1,116 @@
+services:
+  # API Service
+  - type: web
+    name: slanker-api
+    env: python
+    plan: starter
+    buildCommand: |
+      cd api && pip install -r requirements.txt
+    startCommand: |
+      cd api && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        fromService:
+          type: web
+          name: slanker-api
+          property: port
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_URL
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: RPC_URL
+        value: https://mainnet.base.org
+      - key: API_SECRET_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://web.telegram.org,https://webk.telegram.org,https://webz.telegram.org
+      - key: RATE_LIMIT_PER_MINUTE
+        value: 5
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /health
+    domains:
+      - slanker-api.onrender.com
+
+  # Bot Service
+  - type: web
+    name: slanker-bot
+    env: python
+    plan: starter
+    buildCommand: |
+      cd bot && pip install -r requirements.txt
+    startCommand: |
+      cd bot && python main.py
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        fromService:
+          type: web
+          name: slanker-bot
+          property: port
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_URL
+        fromService:
+          type: web
+          name: slanker-bot
+          property: host
+      - key: WEBAPP_URL
+        fromService:
+          type: web
+          name: slanker-webapp
+          property: host
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /health
+    domains:
+      - slanker-bot.onrender.com
+
+  # WebApp Service (Static Site)
+  - type: web
+    name: slanker-webapp
+    env: static
+    plan: starter
+    buildCommand: |
+      cd webapp && echo "Static files ready"
+    staticPublishPath: ./webapp
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Content-Security-Policy
+        value: default-src 'self' https://telegram.org; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://slanker-api.onrender.com
+    domains:
+      - slanker.onrender.com
+
+# Database (if needed for logging/analytics)
+databases:
+  - name: slanker-logs
+    databaseName: slanker
+    user: slanker_user
+    plan: starter
+
+# Environment Variables Documentation
+# Required variables to set in Render dashboard:
+# - TELEGRAM_BOT_TOKEN: Your Telegram bot token from @BotFather
+# - TELEGRAM_WEBHOOK_URL: https://slanker-bot.onrender.com
+# - PRIVATE_KEY: Ethereum private key for token deployment
+# - API_SECRET_KEY: Random secret key for API security
+# - WEBAPP_URL: https://slanker.onrender.com
